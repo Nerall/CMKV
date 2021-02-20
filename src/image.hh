@@ -70,6 +70,8 @@ namespace cmkv
 
   image<std::uint8_t> convert_gray(const image<rgb8_t>& img);
   image<rgb8_t> convert_rgb(const image<std::uint8_t>& img);
+  image<std::uint8_t> convert_binary(const image<std::uint8_t>& img, int threshold);
+  image<rgb8_t> binary_to_rgb(const image<std::uint8_t>& img);
 
   
   namespace io

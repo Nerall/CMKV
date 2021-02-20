@@ -1,67 +1,57 @@
-#include <iostream>
 #include "minimize.hh"
+
+#include <cmath>
+#include <iomanip>
+#include <iostream>
+#include <random>
 
 namespace cmkv
 {
-    float sum_neighbours(image<std::uint8_t> output, size_t i, size_t j)
+
+
+    int sum_neighbours(const image<std::uint8_t> img, int x, int y)
     {
-        float sum = 0;
-        if (j > 0)
-            sum += ((*output.data)[i + (j - 1) * output.width] - 128) / 128;
-        if (j < output.width - 1)
-            sum += ((*output.data)[i + (j + 1) * output.width] - 128) / 128;
-        if (i > 0)
-        {
-            sum += ((*output.data)[i - 1 + j * output.width] - 128) / 128;
-            if (j > 0)
-                sum += ((*output.data)[i - 1 + (j - 1) * output.width] - 128) / 128;
-            if (j < output.width - 1)
-                sum += ((*output.data)[i - 1 + (j + 1) * output.width] - 128) / 128;
-        }
-        if (i < output.height - 1)
-        {
-            sum += ((*output.data)[i + 1 + j * output.width] - 128) / 128;
-            if (j > 0)
-                sum += ((*output.data)[i + 1 + (j - 1) * output.width] - 128) / 128;
-            if (j < output.width - 1)
-                sum += ((*output.data)[i + 1 + (j + 1) * output.width] - 128) / 128;
+        int sum = 0;
+        for (auto j = y - 1; j <= y + 1; j++) {
+            for (auto i = x - 1; i <= x + 1; i++) {
+                if (i == 0 and j == 0)
+                    continue;
+                if (img.has(i, j))
+                    sum += img(i, j) * 2 - 1; // 1 or -1
+            }
         }
 
         return sum;
     }
 
-    image<std::uint8_t> minimize(const image<std::uint8_t>& img)
+    image<rgb8_t> minimize(const image<std::uint8_t>& img)
     {
-        auto beta = 0.8;
-        auto pi = 0.15;
-        auto gamma = 0.5*log((1 - pi) / pi);
-        auto T = 10000U;
+        auto kBeta = 0.8;
+        auto kPi = 0.15;
+        auto kGamma = 0.5 * log((1 - kPi) / kPi);
+        auto kT = img.width * img.height * 6;
+        auto kThreshold = 128;
 
-        auto output = image<std::uint8_t>(img.width, img.height);
-        for (std::size_t y = 0; y < img.height; y++)
-            for (std::size_t x = 0; x < img.width; x++)
-            {
-                (*img.data)[x + y * img.width] = (*img.data)[x + y * img.width] > 128 ? 255 : 0;
-                (*output.data)[x + y * img.width] = (*img.data)[x + y * img.width];
-            }
+        auto output = convert_binary(img, kThreshold);
 
-        for (std::size_t t = 0; t < T; t++)
-        {
-            size_t i = rand() % img.height;
-            size_t j = rand() % img.width;
-            
-            float delta = - 2 * gamma * (float)(*img.data)[i + j * img.width] / 255 * (float)(*output.data)[i + j * img.width] / 255
-                          - 2 * beta * (float)(*output.data)[i + j * img.width] / 255 * sum_neighbours(output, i, j);
+        std::random_device rand_dev;
+        std::mt19937 generator(rand_dev());
+        std::uniform_int_distribution<int> dist_int(0, img.width * img.height - 1);
+        std::uniform_real_distribution<> dist_float(0, 1);
 
-            float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        for (auto t = 0U; t < kT; t++) {
+            auto rand_int = dist_int(generator);
+            int x = rand_int % img.width;
+            int y = rand_int / img.width;
+            auto delta = -2. * kGamma * ((img(x, y) >= kThreshold) * 2 - 1) * (output(x, y) * 2 - 1)
+                         -2. * kBeta * (output(x, y) * 2 - 1) * sum_neighbours(output, x, y);
 
+            auto r = dist_float(generator);
             if (log(r) < delta)
-            {
-                (*output.data)[i + j * img.width] = (*output.data)[i + j * img.width] ? 0 : 255;
-            }
+                output(x, y) = !output(x, y);
         }
 
-        return output;
+        return binary_to_rgb(output);
     }
 
 } // cmkv

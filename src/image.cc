@@ -18,12 +18,12 @@ namespace cmkv
     auto result = image<std::uint8_t>(img.width, img.height);
     for (std::size_t y = 0; y < img.height; ++y)
       for (std::size_t x = 0; x < img.width; ++x)
-	{
-	  float f = 0.2989f * float(img(x, y).r)
-	    + 0.5870f * float(img(x, y).g)
-	    + 0.1140f * float(img(x, y).b);
-	  result(x, y) = static_cast<std::uint8_t>(f + 0.5f);
-	}
+        {
+          float f = 0.2989f * float(img(x, y).r)
+            + 0.5870f * float(img(x, y).g)
+            + 0.1140f * float(img(x, y).b);
+          result(x, y) = static_cast<std::uint8_t>(f + 0.5f);
+        }
     return result;
   }
 
@@ -32,10 +32,33 @@ namespace cmkv
     auto result = image<rgb8_t>(img.width, img.height);
     for (std::size_t y = 0; y < img.height; ++y)
       for (std::size_t x = 0; x < img.width; ++x)
-	{
-	  auto v = img(x, y);
-	  result(x, y) = {v, v, v};
-	}
+        {
+          auto v = img(x, y);
+          result(x, y) = {v, v, v};
+        }
+    return result;
+  }
+
+  image<std::uint8_t> convert_binary(const image<std::uint8_t>& img, int threshold)
+  {
+    auto result = image<uint8_t>(img.width, img.height);
+    for (std::size_t y = 0; y < img.height; ++y)
+      for (std::size_t x = 0; x < img.width; ++x)
+        {
+          result(x, y) = img(x, y) >= threshold;
+        }
+    return result;
+  }
+
+  image<rgb8_t> binary_to_rgb(const image<std::uint8_t>& img)
+  {
+    auto result = image<rgb8_t>(img.width, img.height);
+    for (std::size_t y = 0; y < img.height; ++y)
+      for (std::size_t x = 0; x < img.width; ++x)
+        {
+          uint8_t v = img(x, y) * 255;
+          result(x, y) = {v, v, v};
+        }
     return result;
   }
   
@@ -58,8 +81,8 @@ namespace cmkv
         RGBTRIPLE* line = (RGBTRIPLE*)FreeImage_GetScanLine(bitmap, y);
         for (std::size_t x = 0; x < width; ++x)
         {
-	  auto& pix = img(x, y);
-	  pix.r = line[x].rgbtRed;
+          auto& pix = img(x, y);
+          pix.r = line[x].rgbtRed;
           pix.g = line[x].rgbtGreen;
           pix.b = line[x].rgbtBlue;
         }
@@ -81,7 +104,7 @@ namespace cmkv
         RGBTRIPLE* line = (RGBTRIPLE*)FreeImage_GetScanLine(bitmap, y);
         for (std::size_t x = 0; x < img.width; ++x)
         {
-	  const auto& pix = img(x, y);
+          const auto& pix = img(x, y);
           line[x].rgbtRed   = pix.r;
           line[x].rgbtGreen = pix.g;
           line[x].rgbtBlue  = pix.b;
