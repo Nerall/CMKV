@@ -49,8 +49,8 @@ namespace cmkv
         std::uniform_int_distribution<int> dist_int(0, img.width * img.height - 1);
         std::uniform_real_distribution<> dist_float(0, 1);
 
-        for (std::size_t y = 0; y < img.height; y++)
-            for (std::size_t x = 0; x < img.width; x++)
+        for (std::size_t x = 0; x < img.width; x++)
+            for (std::size_t y = 0; y < img.height; y++)
             {
                 auto delta = -2. * kGamma * (img(x, y) - kThreshold) * (output(x, y) - kThreshold)
                              -2. * kBeta * (output(x, y) - kThreshold) * sum_neighbours(output, x, y);
