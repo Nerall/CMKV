@@ -6,11 +6,26 @@ namespace cmkv
     float sum_neighbours(image<std::uint8_t> output, size_t i, size_t j)
     {
         float sum = 0;
-
-        sum += i ? ((*output.data)[i - 1 + j * output.width] - 127) / 127 : 0;
-        sum += j ? ((*output.data)[i + (j - 1) * output.width] - 127) / 127 : 0;
-        sum += i < (output.height-1) ? ((*output.data)[i + 1 + j * output.width] - 127) / 127 : 0;
-        sum += j < (output.width-1) ? ((*output.data)[i + (j + 1) * output.width] - 127) / 127 : 0;
+        if (j > 0)
+            sum += ((*output.data)[i + (j - 1) * output.width] - 128) / 128;
+        if (j < output.width - 1)
+            sum += ((*output.data)[i + (j + 1) * output.width] - 128) / 128;
+        if (i > 0)
+        {
+            sum += ((*output.data)[i - 1 + j * output.width] - 128) / 128;
+            if (j > 0)
+                sum += ((*output.data)[i - 1 + (j - 1) * output.width] - 128) / 128;
+            if (j < output.width - 1)
+                sum += ((*output.data)[i - 1 + (j + 1) * output.width] - 128) / 128;
+        }
+        if (i < output.height - 1)
+        {
+            sum += ((*output.data)[i + 1 + j * output.width] - 128) / 128;
+            if (j > 0)
+                sum += ((*output.data)[i + 1 + (j - 1) * output.width] - 128) / 128;
+            if (j < output.width - 1)
+                sum += ((*output.data)[i + 1 + (j + 1) * output.width] - 128) / 128;
+        }
 
         return sum;
     }
@@ -20,13 +35,13 @@ namespace cmkv
         auto beta = 0.8;
         auto pi = 0.15;
         auto gamma = 0.5*log((1 - pi) / pi);
-        auto T = 500000U;
+        auto T = 10000U;
 
         auto output = image<std::uint8_t>(img.width, img.height);
         for (std::size_t y = 0; y < img.height; y++)
             for (std::size_t x = 0; x < img.width; x++)
             {
-                (*img.data)[x + y * img.width] = (*img.data)[x + y * img.width] > 127 ? 255 : 0;
+                (*img.data)[x + y * img.width] = (*img.data)[x + y * img.width] > 128 ? 255 : 0;
                 (*output.data)[x + y * img.width] = (*img.data)[x + y * img.width];
             }
 
@@ -39,8 +54,6 @@ namespace cmkv
                           - 2 * beta * (float)(*output.data)[i + j * img.width] / 255 * sum_neighbours(output, i, j);
 
             float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-
-            std::cout << r << "  <>  " << delta << std::endl;
 
             if (log(r) < delta)
             {
