@@ -1,5 +1,6 @@
 #include "minimize.hh"
 
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
@@ -9,7 +10,8 @@ namespace {
     const auto kBeta = 0.8;
     const auto kPi = 0.15;
     const auto kGamma = 0.5 * log((1 - kPi) / kPi);
-    const auto kThreshold = 128;
+    int kThreshold;
+    int kMinThreshold;
 }
 
 namespace cmkv
@@ -40,6 +42,10 @@ namespace cmkv
                 output(x, y) = img(x, y);
             }
         }
+        auto vec = *img.data;
+        std::sort(vec.begin(), vec.end());
+        kThreshold = int(vec[img.height * img.width / 2]);
+        kMinThreshold = int(vec[img.height * img.width / 4]);
 
         std::random_device rand_dev;
         std::mt19937 generator(rand_dev());
@@ -62,7 +68,14 @@ namespace cmkv
                     output(x, y) = 255;
             }
 
-        return convert_rgb(output);
+        for (std::size_t y = 0; y < img.height; ++y) {
+            for (std::size_t x = 0; x < img.width; ++x) {
+                if (img(x, y) < kMinThreshold)
+                    output(x, y) = 0;
+            }
+        }
+
+        return binary_to_rgb(convert_binary(output, kThreshold)); // Remove last grey pixels
     }
 
 } // cmkv
